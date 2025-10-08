@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\MataKuliahController;
 
 /*
 |--------------------------------------------------------------------------
@@ -35,3 +36,8 @@ Route::get('/user', [UserController::class, 'index']);
 Route::get('/user/table', [UserController::class, 'table'])->name('user.table');
 Route::get('/user/create', [UserController::class, 'create'])->name('user.create');
 Route::post('/user', [UserController::class, 'store'])->name('user.store');
+
+// Mata Kuliah Routes
+Route::get('/mata-kuliah', [MataKuliahController::class, 'index'])->name('mata-kuliah.index');
+Route::get('/mata-kuliah/create', [MataKuliahController::class, 'create'])->name('mata-kuliah.create');
+Route::post('/mata-kuliah', [MataKuliahController::class, 'store'])->name('mata-kuliah.store');
