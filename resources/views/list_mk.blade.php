@@ -63,15 +63,16 @@
                                             </td>
                                             <td class="align-middle text-center">
                                                 <div class="btn-group" role="group">
-                                                    <button type="button" class="btn btn-outline-primary btn-sm" title="Lihat Detail">
-                                                        <i class="bi bi-eye"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-warning btn-sm" title="Edit">
+                                                    <a href="{{ route('mata-kuliah.edit', $mk->id) }}" class="btn btn-outline-warning btn-sm" title="Edit">
                                                         <i class="bi bi-pencil"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-danger btn-sm" title="Hapus">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
+                                                    </a>
+                                                    <form action="{{ route('mata-kuliah.destroy', $mk->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus mata kuliah ini?')">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-outline-danger btn-sm" title="Hapus">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </form>
                                                 </div>
                                             </td>
                                         </tr>
