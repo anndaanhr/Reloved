@@ -12,11 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('user', function (Blueprint $table) {
-            $table->id();                                  // kolom id (primary key)
+            $table->uuid('id')->primary();                 // kolom id (primary key, UUID)
             $table->string('nama', 150);                   // kolom nama
             $table->string('npm', 20)->unique();           // kolom npm, dibuat unique
-            $table->foreignId('kelas_id')                  // kolom kelas_id
-                  ->constrained();                   // jika kelas dihapus, user ikut terhapus
+            $table->uuid('kelas_id');                      // kolom kelas_id (UUID)
             $table->timestamps();                          // created_at & updated_at
         });
     }
