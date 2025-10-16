@@ -2,21 +2,20 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-class User extends Authenticatable
+class MataKuliah extends Model
 {
     use HasFactory;
 
-    protected $guarded = ['id'];
-    protected $table = 'user';
+    protected $table = 'mata_kuliah';
     
+    protected $guarded = [];
+
     protected $keyType = 'string';
+    
     public $incrementing = false;
 
     protected static function boot()
@@ -28,10 +27,5 @@ class User extends Authenticatable
                 $model->id = Str::uuid();
             }
         });
-    }
-
-    public function kelas()
-    {
-        return $this->belongsTo(Kelas::class, 'kelas_id');
     }
 }

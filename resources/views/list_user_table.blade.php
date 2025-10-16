@@ -33,22 +33,19 @@
 
         $actions = [
             [
-                'icon' => 'eye',
-                'variant' => 'outline-info',
-                'title' => 'Lihat Detail',
-                'onclick' => 'viewUser'
-            ],
-            [
-                'icon' => 'pencil',
-                'variant' => 'outline-warning',
+                'icon' => 'pencil-square',
+                'variant' => 'warning',
                 'title' => 'Edit User',
-                'onclick' => 'editUser'
+                'url' => 'user.edit',
+                'method' => 'GET'
             ],
             [
-                'icon' => 'trash',
-                'variant' => 'outline-danger',
+                'icon' => 'trash3',
+                'variant' => 'danger',
                 'title' => 'Hapus User',
-                'onclick' => 'deleteUser'
+                'url' => 'user.destroy',
+                'method' => 'DELETE',
+                'confirm' => true
             ]
         ];
 

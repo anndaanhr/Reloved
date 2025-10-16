@@ -36,6 +36,34 @@
         </div>
 
         <div class="row g-4 justify-content-center mt-4">
+            <div class="col-md-5">
+                <div class="card border-0 shadow-sm h-100 text-center">
+                    <div class="card-body">
+                        <i class="bi bi-book-fill display-4 text-warning mb-3"></i>
+                        <h5 class="card-title">Daftar Mata Kuliah</h5>
+                        <p class="card-text">Lihat semua mata kuliah yang tersedia dalam sistem.</p>
+                        <a href="{{ route('mata-kuliah.index') }}" class="btn btn-outline-warning mt-2">
+                            <i class="bi bi-list-ul"></i> Lihat Mata Kuliah
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-5">
+                <div class="card border-0 shadow-sm h-100 text-center">
+                    <div class="card-body">
+                        <i class="bi bi-plus-circle-fill display-4 text-info mb-3"></i>
+                        <h5 class="card-title">Tambah Mata Kuliah</h5>
+                        <p class="card-text">Tambahkan mata kuliah baru ke dalam sistem.</p>
+                        <a href="{{ route('mata-kuliah.create') }}" class="btn btn-info mt-2">
+                            <i class="bi bi-plus-circle"></i> Tambah Mata Kuliah
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 justify-content-center mt-4">
             <div class="col-md-6">
                 <div class="card border-0 shadow-sm text-center">
                     <div class="card-body">

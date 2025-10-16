@@ -1,4 +1,31 @@
 <div class="container mt-4">
+    <!-- Success/Error Notifications -->
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-check-circle-fill me-3 fs-4"></i>
+                <div>
+                    <h6 class="alert-heading mb-1">Berhasil!</h6>
+                    <p class="mb-0">{{ session('success') }}</p>
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle-fill me-3 fs-4"></i>
+                <div>
+                    <h6 class="alert-heading mb-1">Error!</h6>
+                    <p class="mb-0">{{ session('error') }}</p>
+                </div>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    @endif
+
     <!-- Header Section -->
     <div class="row mb-4">
         <div class="col-12">
@@ -116,12 +143,17 @@
                         
                         <!-- Actions -->
                         <div class="d-flex justify-content-center gap-2 mt-3">
-                            <button class="btn btn-outline-primary btn-sm rounded-pill px-3">
-                                <i class="bi bi-eye me-1"></i>Detail
-                            </button>
-                            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3">
-                                <i class="bi bi-pencil me-1"></i>Edit
-                            </button>
+                            <a href="{{ route('user.edit', $users->id) }}" class="btn btn-warning btn-sm rounded-pill px-3 action-btn edit-btn">
+                                <i class="bi bi-pencil-square me-1"></i>Edit
+                            </a>
+                            <form action="{{ route('user.destroy', $users->id) }}" method="POST" class="d-inline delete-form">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-danger btn-sm rounded-pill px-3 action-btn delete-btn" 
+                                        onclick="return confirmDelete('{{ $users->nama }}')">
+                                    <i class="bi bi-trash3 me-1"></i>Hapus
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -184,6 +216,103 @@
     .form-control {
         border-radius: 0 10px 10px 0;
     }
+    
+    /* Creative Action Button Styles */
+    .action-btn {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .edit-btn {
+        background: linear-gradient(135deg, #ffc107 0%, #ff8c00 100%);
+        border: none;
+        color: white;
+        font-weight: 600;
+    }
+    
+    .edit-btn:hover {
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 8px 25px rgba(255, 193, 7, 0.4);
+        color: white;
+    }
+    
+    .edit-btn:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+    }
+    
+    .edit-btn:hover:before {
+        left: 100%;
+    }
+    
+    .delete-btn {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        border: none;
+        color: white;
+        font-weight: 600;
+    }
+    
+    .delete-btn:hover {
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4);
+        color: white;
+    }
+    
+    .delete-btn:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s;
+    }
+    
+    .delete-btn:hover:before {
+        left: 100%;
+    }
+    
+    /* Card hover effects */
+    .user-card:hover .action-btn {
+        transform: translateY(-2px);
+    }
+    
+    /* Success/Error Alert Animations */
+    .alert {
+        border: none;
+        border-radius: 12px;
+        animation: slideInDown 0.5s ease-out;
+    }
+    
+    @keyframes slideInDown {
+        from {
+            transform: translateY(-100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+    
+    /* Pulse animation for action buttons */
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .action-btn:active {
+        animation: pulse 0.3s ease-in-out;
+    }
 </style>
 
 <!-- Search and Filter JavaScript -->
@@ -216,4 +345,97 @@ document.addEventListener('DOMContentLoaded', function() {
     searchInput.addEventListener('input', filterUsers);
     kelasFilter.addEventListener('change', filterUsers);
 });
+
+// Delete confirmation function
+function confirmDelete(nama) {
+    return Swal.fire({
+        title: 'Konfirmasi Hapus',
+        html: `Apakah Anda yakin ingin menghapus data <strong>"${nama}"</strong>?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-trash3 me-1"></i>Ya, Hapus!',
+        cancelButtonText: '<i class="bi bi-x-circle me-1"></i>Batal',
+        reverseButtons: true,
+        customClass: {
+            popup: 'swal2-popup-custom',
+            confirmButton: 'swal2-confirm-custom',
+            cancelButton: 'swal2-cancel-custom'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Show loading state
+            Swal.fire({
+                title: 'Menghapus...',
+                text: 'Sedang menghapus data, mohon tunggu.',
+                icon: 'info',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            return true;
+        }
+        return false;
+    });
+}
+
+// Auto-hide alerts after 5 seconds
+document.addEventListener('DOMContentLoaded', function() {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        setTimeout(() => {
+            if (alert.classList.contains('show')) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }
+        }, 5000);
+    });
+});
+
+// Add SweetAlert2 CDN if not already loaded
+if (typeof Swal === 'undefined') {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+    script.onload = function() {
+        console.log('SweetAlert2 loaded successfully');
+    };
+    document.head.appendChild(script);
+}
 </script>
+
+<!-- SweetAlert2 Styles -->
+<style>
+.swal2-popup-custom {
+    border-radius: 15px !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
+}
+
+.swal2-confirm-custom {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+}
+
+.swal2-confirm-custom:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4) !important;
+}
+
+.swal2-cancel-custom {
+    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+}
+
+.swal2-cancel-custom:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(108, 117, 125, 0.4) !important;
+}
+</style>
