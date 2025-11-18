@@ -166,62 +166,40 @@
     const messageForm = document.getElementById('message-form');
     const messageInput = document.getElementById('message-input');
 
-    // Polling untuk update messages (karena tidak ada Redis untuk Reverb)
-    // Chat akan auto-refresh setiap 3 detik untuk melihat pesan baru
-    let pollingInterval = null;
-    
-    function checkNewMessages() {
-        // Simple reload untuk update messages
-        // Bisa diimprove dengan API endpoint yang return JSON messages saja
-        const currentUrl = window.location.href;
-        fetch(currentUrl, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => {
-            if (response.ok) {
-                // Check if page has new content (simplified approach)
-                // In production, better to use API endpoint
-                return response.text();
-            }
-        })
-        .catch(error => {
-            console.log('Polling error (non-critical):', error);
-        });
-    }
-    
-    // Start polling setiap 3 detik untuk check pesan baru
-    pollingInterval = setInterval(() => {
-        // Reload page untuk update messages (simple approach)
-        // Note: Ini akan reload seluruh page, bisa diimprove dengan AJAX
-        // Untuk sementara, user bisa refresh manual atau tunggu auto-reload
-    }, 5000); // 5 detik
-    
-    // Try to use Echo if available (untuk future jika Redis tersedia)
-    if (typeof window.Echo !== 'undefined') {
+    async function loadMessages() {
         try {
-            window.Echo.join(`conversation.${conversationId}`)
-                .listen('.message.sent', (e) => {
-                    addMessageToChat(e);
-                    scrollToBottom();
-                    // Stop polling jika Echo berhasil connect
-                    if (pollingInterval) {
-                        clearInterval(pollingInterval);
-                        pollingInterval = null;
-                    }
-                })
-                .error((error) => {
-                    console.log('Echo not available, using manual refresh instead');
-                });
+            const response = await fetch(`/chat/${conversationId}?ajax=1`, {
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            });
+
+            const html = await response.text();
+
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, "text/html");
+            const newMessages = doc.querySelector('#messages-container');
+
+            if (newMessages) {
+                messagesContainer.innerHTML = newMessages.innerHTML;
+                scrollToBottom();
+            }
         } catch (error) {
-            console.log('Echo not available, messages will update on page refresh');
+            console.log("Load messages error:", error);
         }
-    } else {
-        console.log('Echo not available. Messages will update when you refresh the page.');
     }
 
-    // Send message
+    setInterval(() => {
+        loadMessages();
+    }, 5000);
+
+
+    console.log("Realtime disabled → using polling mode only");
+
+
+    /**
+     * SEND MESSAGE
+     */
     messageForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -242,7 +220,6 @@
             
             if (data.success) {
                 messageInput.value = '';
-                // Reload messages after sending (karena tidak ada real-time)
                 loadMessages();
                 scrollToBottom();
             } else {
@@ -254,8 +231,11 @@
         }
     });
 
+
+    /** RENDER MANUAL MESSAGE (tidak dipakai jika polling berjalan) */
     function addMessageToChat(messageData) {
-        const isOwnMessage = messageData.sender_id === currentUserId;
+        const isOwnMessage = messageData.sender_id == currentUserId;
+
         const messageDiv = document.createElement('div');
         messageDiv.className = `flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`;
         
@@ -272,11 +252,15 @@
         messagesContainer.appendChild(messageDiv);
     }
 
+
     function scrollToBottom() {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
-    // Offer functions
+    /**
+     * OFFER FUNCTIONS — 
+     */
+
     function openMakeOfferModal(conversationId, productPrice) {
         const amount = prompt(`Masukkan tawaran Anda (maksimal Rp ${productPrice.toLocaleString('id-ID')}):`, '');
         if (amount && !isNaN(amount) && parseFloat(amount) > 0 && parseFloat(amount) < productPrice) {
@@ -299,13 +283,12 @@
 
             const data = await response.json();
             if (data.success) {
-                // Message will be added via broadcast
+                loadMessages();
             } else {
                 alert('Gagal membuat tawaran: ' + (data.error || 'Unknown error'));
             }
         } catch (error) {
             console.error('Error making offer:', error);
-            alert('Gagal membuat tawaran');
         }
     }
 
@@ -323,13 +306,10 @@
 
             const data = await response.json();
             if (data.success) {
-                // Message will be added via broadcast
-            } else {
-                alert('Gagal menerima tawaran: ' + (data.error || 'Unknown error'));
+                loadMessages();
             }
         } catch (error) {
             console.error('Error accepting offer:', error);
-            alert('Gagal menerima tawaran');
         }
     }
 
@@ -347,13 +327,10 @@
 
             const data = await response.json();
             if (data.success) {
-                // Message will be added via broadcast
-            } else {
-                alert('Gagal menolak tawaran: ' + (data.error || 'Unknown error'));
+                loadMessages();
             }
         } catch (error) {
             console.error('Error rejecting offer:', error);
-            alert('Gagal menolak tawaran');
         }
     }
 
@@ -385,19 +362,16 @@
 
             const data = await response.json();
             if (data.success) {
-                // Message will be added via broadcast
-            } else {
-                alert('Gagal membuat tawaran balik: ' + (data.error || 'Unknown error'));
+                loadMessages();
             }
         } catch (error) {
             console.error('Error countering offer:', error);
-            alert('Gagal membuat tawaran balik');
         }
     }
 
-    // Scroll to bottom on load
     scrollToBottom();
 </script>
+
 @endpush
 @endif
 @endsection

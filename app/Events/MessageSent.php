@@ -5,7 +5,7 @@ namespace App\Events;
 use App\Models\Message;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Broadcasting\PresenceChannel;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
@@ -23,11 +23,7 @@ class MessageSent implements ShouldBroadcast
 
     public function broadcastOn()
     {
-        if (config('broadcasting.default') === 'null' || config('broadcasting.default') === 'log') {
-            return new Channel('null');
-        }
-        
-        return new PresenceChannel('conversation.' . $this->message->conversation_id);
+        return new PrivateChannel('conversation.' . $this->message->conversation_id);
     }
 
     public function broadcastAs(): string
