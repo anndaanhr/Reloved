@@ -12,16 +12,17 @@ class NotificationController extends Controller
     {
         $notifications = Notification::where('user_id', Auth::id())
             ->latest()
-            ->paginate(20);
-
+            ->paginate(15);
+            
         return view('notifications.index', compact('notifications'));
     }
 
     public function markAsRead(string $id)
     {
-        $notification = Notification::where('user_id', Auth::id())
-            ->findOrFail($id);
-
+        $notification = Notification::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+            
         $notification->markAsRead();
 
         if (request()->expectsJson()) {
@@ -35,10 +36,7 @@ class NotificationController extends Controller
     {
         Notification::where('user_id', Auth::id())
             ->where('is_read', false)
-            ->update([
-                'is_read' => true,
-                'read_at' => now(),
-            ]);
+            ->update(['is_read' => true]);
 
         if (request()->expectsJson()) {
             return response()->json(['success' => true]);
@@ -56,15 +54,20 @@ class NotificationController extends Controller
         return response()->json([
             'success' => true,
             'count' => $count,
-        ]);
+        ])->header('Content-Type', 'application/json');
     }
 
     public function destroy(string $id)
     {
-        $notification = Notification::where('user_id', Auth::id())
-            ->findOrFail($id);
-
+        $notification = Notification::where('id', $id)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+            
         $notification->delete();
+
+        if (request()->expectsJson()) {
+            return response()->json(['success' => true]);
+        }
 
         return back()->with('success', 'Notifikasi dihapus');
     }
