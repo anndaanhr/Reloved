@@ -298,169 +298,171 @@
 @if($canMarkAsSold)
 <div id="mark-as-sold-modal" class="fixed inset-0 bg-black/50 z-50 hidden" style="display: none;">
     <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-16 border border-border shadow-xl max-w-md w-full p-6">
-            <h3 class="text-lg font-bold text-text-primary mb-4">Produk Terjual</h3>
-            <p class="text-sm text-text-secondary mb-4">Pilih pembeli yang membeli produk ini:</p>
+        <div class="bg-white rounded-16 border border-border shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-white border-b border-border p-6 z-10">
+                <h3 class="text-lg font-bold text-text-primary">Produk Terjual</h3>
+                <p class="text-sm text-text-secondary mt-1">Pilih pembeli yang membeli produk ini</p>
+            </div>
             
-            @if(count($buyers) > 0)
-                <form method="POST" action="{{ route('transactions.store') }}" id="mark-as-sold-form">
-                    @csrf
-                    <input type="hidden" name="product_id" value="{{ $product->id }}">
-                    
-                    <div class="space-y-2 mb-4 max-h-64 overflow-y-auto">
-                        @foreach($buyers as $buyer)
-                            <label class="flex items-center gap-3 p-3 border border-border rounded-10 hover:bg-gray-50 cursor-pointer transition">
-                                <input 
-                                    type="radio" 
-                                    name="buyer_id" 
-                                    value="{{ $buyer['id'] }}"
-                                    class="text-primary focus:ring-primary"
-                                    required
-                                    onchange="enableSubmitButton()"
+            <div class="p-6">
+                @if(count($buyers) > 0)
+                    <form method="POST" action="{{ route('transactions.store') }}" id="mark-as-sold-form">
+                        @csrf
+                        <input type="hidden" name="product_id" value="{{ $product->id }}">
+                        
+                        <!-- Buyer Selection -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-text-primary mb-3">Pilih Pembeli</label>
+                            <div class="space-y-2 max-h-48 overflow-y-auto">
+                                @foreach($buyers as $buyer)
+                                    <label class="flex items-center gap-3 p-3 border border-border rounded-10 hover:bg-gray-50 cursor-pointer transition">
+                                        <input 
+                                            type="radio" 
+                                            name="buyer_id" 
+                                            value="{{ $buyer['id'] }}"
+                                            class="text-primary focus:ring-primary"
+                                            required
+                                            onchange="validateForm()"
+                                        >
+                                        <div class="flex items-center gap-3 flex-1 min-w-0">
+                                            <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                                                @if($buyer['avatar'])
+                                                    <img src="{{ $buyer['avatar'] }}" alt="{{ $buyer['name'] }}" class="w-full h-full object-cover rounded-full">
+                                                @else
+                                                    <span class="text-text-secondary font-semibold text-sm">{{ substr($buyer['name'], 0, 1) }}</span>
+                                                @endif
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-semibold text-text-primary truncate">{{ $buyer['name'] }}</p>
+                                                @if($buyer['has_offers'] && $buyer['latest_offer_amount'])
+                                                    <p class="text-xs text-text-secondary truncate">Tawaran: Rp {{ number_format($buyer['latest_offer_amount'], 0, ',', '.') }}</p>
+                                                @else
+                                                    <p class="text-xs text-text-secondary">Sudah chat</p>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </label>
+                                @endforeach
+                            </div>
+                        </div>
+
+                        <!-- Deal Method -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-text-primary mb-3">Metode Transaksi</label>
+                            <div class="space-y-2">
+                                <label class="flex items-center p-3 border border-border rounded-10 cursor-pointer hover:bg-gray-50 transition">
+                                    <input type="radio" name="deal_method" value="meetup" class="text-primary focus:ring-primary" checked onchange="toggleShippingFields()">
+                                    <span class="ml-3 text-sm text-text-primary font-medium">Meet-up (COD)</span>
+                                </label>
+                                <label class="flex items-center p-3 border border-border rounded-10 cursor-pointer hover:bg-gray-50 transition">
+                                    <input type="radio" name="deal_method" value="shipping" class="text-primary focus:ring-primary" onchange="toggleShippingFields()">
+                                    <span class="ml-3 text-sm text-text-primary font-medium">Pengiriman (COD)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Meet-up Location -->
+                        <div id="meetup-fields" class="mb-6">
+                            <label for="meetup_location" class="block text-sm font-medium text-text-primary mb-2">Lokasi Meet-up</label>
+                            <input 
+                                type="text" 
+                                id="meetup_location" 
+                                name="meetup_location" 
+                                placeholder="Contoh: Mall Grand Indonesia, Jakarta"
+                                class="w-full h-10 px-4 py-2 border border-border rounded-10 text-sm text-text-primary placeholder:text-placeholder focus:ring-2 focus:ring-primary focus:border-primary transition"
+                            >
+                        </div>
+
+                        <!-- Shipping Fields -->
+                        <div id="shipping-fields" class="mb-6 hidden">
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="origin_city" class="block text-sm font-medium text-text-primary mb-2">Kota Asal</label>
+                                    <input 
+                                        type="text" 
+                                        id="origin_city" 
+                                        name="origin_city" 
+                                        value="{{ Auth::user()->city ?? '' }}"
+                                        placeholder="Kota asal pengiriman"
+                                        class="w-full h-10 px-4 py-2 border border-border rounded-10 text-sm text-text-primary placeholder:text-placeholder focus:ring-2 focus:ring-primary focus:border-primary transition"
+                                    >
+                                </div>
+                                <div>
+                                    <label for="destination_city" class="block text-sm font-medium text-text-primary mb-2">Kota Tujuan</label>
+                                    <input 
+                                        type="text" 
+                                        id="destination_city" 
+                                        name="destination_city" 
+                                        placeholder="Kota tujuan pengiriman"
+                                        class="w-full h-10 px-4 py-2 border border-border rounded-10 text-sm text-text-primary placeholder:text-placeholder focus:ring-2 focus:ring-primary focus:border-primary transition"
+                                    >
+                                </div>
+                                <div>
+                                    <label for="weight" class="block text-sm font-medium text-text-primary mb-2">Berat (gram)</label>
+                                    <input 
+                                        type="number" 
+                                        id="weight" 
+                                        name="weight" 
+                                        min="1"
+                                        placeholder="1000"
+                                        class="w-full h-10 px-4 py-2 border border-border rounded-10 text-sm text-text-primary placeholder:text-placeholder focus:ring-2 focus:ring-primary focus:border-primary transition"
+                                    >
+                                </div>
+                                <button 
+                                    type="button" 
+                                    onclick="checkShippingCost()" 
+                                    class="w-full bg-blue-500 text-white px-4 py-2.5 rounded-10 font-semibold text-sm hover:bg-blue-600 transition"
                                 >
-                                <div class="flex items-center gap-3 flex-1">
-                                    <div class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                                        @if($buyer['avatar'])
-                                            <img src="{{ $buyer['avatar'] }}" alt="{{ $buyer['name'] }}" class="w-full h-full object-cover rounded-full">
-                                        @else
-                                            <span class="text-text-secondary font-semibold text-sm">{{ substr($buyer['name'], 0, 1) }}</span>
-                                        @endif
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <p class="text-sm font-semibold text-text-primary">{{ $buyer['name'] }}</p>
-                                        @if($buyer['has_offers'] && $buyer['latest_offer_amount'])
-                                            <p class="text-xs text-text-secondary">Tawaran terakhir: Rp {{ number_format($buyer['latest_offer_amount'], 0, ',', '.') }}</p>
-                                        @else
-                                            <p class="text-xs text-text-secondary">Sudah chat</p>
-                                        @endif
+                                    Cek Ongkir
+                                </button>
+                                
+                                <!-- Shipping Results -->
+                                <div id="shipping-cost-results" class="hidden">
+                                    <p class="font-semibold text-gray-900 mb-3 text-sm">Pilih Layanan:</p>
+                                    <div class="space-y-2 max-h-64 overflow-y-auto border border-gray-200 rounded-10 p-2">
+                                        <!-- Results will be inserted here -->
                                     </div>
                                 </div>
-                            </label>
-                        @endforeach
-                    </div>
-
-                    <!-- Deal Method -->
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-text-primary mb-2">Metode Transaksi</label>
-                        <div class="space-y-2">
-                            <label class="flex items-center">
-                                <input type="radio" name="deal_method" value="meetup" class="text-primary focus:ring-primary" checked onchange="toggleShippingFields()">
-                                <span class="ml-2 text-sm text-text-primary">Meet-up (COD)</span>
-                            </label>
-                            <label class="flex items-center">
-                                <input type="radio" name="deal_method" value="shipping" class="text-primary focus:ring-primary" onchange="toggleShippingFields()">
-                                <span class="ml-2 text-sm text-text-primary">Pengiriman (COD)</span>
-                            </label>
+                                
+                                <input type="hidden" id="shipping_cost" name="shipping_cost">
+                                <input type="hidden" id="shipping_courier" name="shipping_courier">
+                                <input type="hidden" id="shipping_service" name="shipping_service">
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Meet-up Location -->
-                    <div id="meetup-fields" class="mb-4">
-                        <label for="meetup_location" class="block text-sm font-medium text-text-primary mb-2">Lokasi Meet-up</label>
-                        <input 
-                            type="text" 
-                            id="meetup_location" 
-                            name="meetup_location" 
-                            placeholder="Contoh: Mall Grand Indonesia, Jakarta"
-                            class="w-full h-10 px-4 py-2 border border-border rounded-10 text-sm text-text-primary placeholder:text-placeholder focus:ring-2 focus:ring-primary focus:border-primary transition"
-                        >
-                    </div>
-
-                    <!-- Shipping Fields -->
-                    <div id="shipping-fields" class="mb-4 hidden">
-                        <div class="space-y-3">
-                            <div>
-                                <label for="origin_city" class="block text-sm font-medium text-text-primary mb-2">Kota Asal</label>
-                                <input 
-                                    type="text" 
-                                    id="origin_city" 
-                                    name="origin_city" 
-                                    value="{{ Auth::user()->city ?? '' }}"
-                                    placeholder="Kota asal pengiriman"
-                                    class="w-full h-10 px-4 py-2 border border-border rounded-10 text-sm text-text-primary placeholder:text-placeholder focus:ring-2 focus:ring-primary focus:border-primary transition"
-                                >
-                            </div>
-                            <div>
-                                <label for="destination_city" class="block text-sm font-medium text-text-primary mb-2">Kota Tujuan</label>
-                                <input 
-                                    type="text" 
-                                    id="destination_city" 
-                                    name="destination_city" 
-                                    placeholder="Kota tujuan pengiriman"
-                                    class="w-full h-10 px-4 py-2 border border-border rounded-10 text-sm text-text-primary placeholder:text-placeholder focus:ring-2 focus:ring-primary focus:border-primary transition"
-                                >
-                            </div>
-                            <div>
-                                <label for="weight" class="block text-sm font-medium text-text-primary mb-2">Berat (gram)</label>
-                                <input 
-                                    type="number" 
-                                    id="weight" 
-                                    name="weight" 
-                                    min="1"
-                                    placeholder="1000"
-                                    class="w-full h-10 px-4 py-2 border border-border rounded-10 text-sm text-text-primary placeholder:text-placeholder focus:ring-2 focus:ring-primary focus:border-primary transition"
-                                >
-                            </div>
-                            <div>
-                                <label for="courier" class="block text-sm font-medium text-text-primary mb-2">Kurir</label>
-                                <select 
-                                    id="courier" 
-                                    name="courier" 
-                                    class="w-full h-10 px-4 py-2 border border-border rounded-10 text-sm text-text-primary focus:ring-2 focus:ring-primary focus:border-primary transition"
-                                >
-                                    <option value="jne">JNE</option>
-                                    <option value="tiki">TIKI</option>
-                                    <option value="pos">POS Indonesia</option>
-                                </select>
-                            </div>
-                            <button 
-                                type="button" 
-                                onclick="checkShippingCost()" 
-                                class="w-full bg-yellow-500 text-white px-4 py-2.5 rounded-10 font-semibold text-sm hover:bg-yellow-600 transition"
+                        <!-- Price -->
+                        <div class="mb-6">
+                            <label for="price" class="block text-sm font-medium text-text-primary mb-2">Harga Kesepakatan (Rp)</label>
+                            <input 
+                                type="number" 
+                                id="price" 
+                                name="price" 
+                                value="{{ $product->price }}"
+                                min="0"
+                                step="1000"
+                                required
+                                class="w-full h-10 px-4 py-2 border border-border rounded-10 text-sm text-text-primary placeholder:text-placeholder focus:ring-2 focus:ring-primary focus:border-primary transition"
                             >
-                                Cek Ongkir
-                            </button>
-                            <div id="shipping-cost-results" class="hidden space-y-2">
-                                <!-- Shipping cost results will be displayed here -->
-                            </div>
-                            <input type="hidden" id="shipping_cost" name="shipping_cost">
-                            <input type="hidden" id="shipping_courier" name="shipping_courier">
-                            <input type="hidden" id="shipping_service" name="shipping_service">
                         </div>
-                    </div>
 
-                    <!-- Price -->
-                    <div class="mb-4">
-                        <label for="price" class="block text-sm font-medium text-text-primary mb-2">Harga Kesepakatan (Rp)</label>
-                        <input 
-                            type="number" 
-                            id="price" 
-                            name="price" 
-                            value="{{ $product->price }}"
-                            min="0"
-                            step="1000"
-                            required
-                            class="w-full h-10 px-4 py-2 border border-border rounded-10 text-sm text-text-primary placeholder:text-placeholder focus:ring-2 focus:ring-primary focus:border-primary transition"
-                        >
-                    </div>
-
-                    <div class="flex gap-3">
-                        <button type="button" onclick="closeMarkAsSoldModal()" class="flex-1 bg-gray-100 text-text-secondary px-4 py-2.5 rounded-10 font-semibold text-sm hover:bg-gray-200 transition">
-                            Batal
-                        </button>
-                        <button type="submit" id="submit-transaction-btn" class="flex-1 bg-primary text-white px-4 py-2.5 rounded-10 font-semibold text-sm hover:opacity-90 transition" disabled>
-                            Konfirmasi
+                        <div class="flex gap-3">
+                            <button type="button" onclick="closeMarkAsSoldModal()" class="flex-1 bg-gray-100 text-text-secondary px-4 py-2.5 rounded-10 font-semibold text-sm hover:bg-gray-200 transition">
+                                Batal
+                            </button>
+                            <button type="submit" id="submit-transaction-btn" class="flex-1 bg-primary text-white px-4 py-2.5 rounded-10 font-semibold text-sm hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                Konfirmasi
+                            </button>
+                        </div>
+                    </form>
+                @else
+                    <div class="text-center py-8">
+                        <p class="text-sm text-text-secondary mb-4">Belum ada pembeli yang chat/tawar</p>
+                        <button onclick="closeMarkAsSoldModal()" class="bg-gray-100 text-text-secondary px-6 py-2.5 rounded-10 font-semibold text-sm hover:bg-gray-200 transition">
+                            Tutup
                         </button>
                     </div>
-                </form>
-            @else
-                <div class="text-center py-8">
-                    <p class="text-sm text-text-secondary mb-4">Belum ada pembeli yang chat/tawar</p>
-                    <button onclick="closeMarkAsSoldModal()" class="bg-gray-100 text-text-secondary px-6 py-2.5 rounded-10 font-semibold text-sm hover:bg-gray-200 transition">
-                        Tutup
-                    </button>
-                </div>
-            @endif
+                @endif
+            </div>
         </div>
     </div>
 </div>
@@ -468,8 +470,218 @@
 
 @push('scripts')
 <script>
-function changeMainImage(url) {
-    document.getElementById('main-image').src = url;
+function toggleShippingFields() {
+    const dealMethod = document.querySelector('input[name="deal_method"]:checked').value;
+    const meetupFields = document.getElementById('meetup-fields');
+    const shippingFields = document.getElementById('shipping-fields');
+    const shippingResults = document.getElementById('shipping-cost-results');
+    
+    if (dealMethod === 'meetup') {
+        meetupFields.classList.remove('hidden');
+        shippingFields.classList.add('hidden');
+        shippingResults.classList.add('hidden');
+        document.getElementById('meetup_location').required = true;
+        // Clear shipping requirements
+        document.getElementById('shipping_cost').value = '';
+        document.getElementById('shipping_courier').value = '';
+        document.getElementById('shipping_service').value = '';
+    } else {
+        meetupFields.classList.add('hidden');
+        shippingFields.classList.remove('hidden');
+        document.getElementById('meetup_location').required = false;
+    }
+    
+    validateForm();
+}
+
+function validateForm() {
+    const submitBtn = document.getElementById('submit-transaction-btn');
+    const buyerSelected = document.querySelector('input[name="buyer_id"]:checked');
+    const dealMethod = document.querySelector('input[name="deal_method"]:checked').value;
+    
+    let isValid = buyerSelected !== null;
+    
+    if (dealMethod === 'shipping') {
+        const shippingCost = document.getElementById('shipping_cost').value;
+        const shippingCourier = document.getElementById('shipping_courier').value;
+        const shippingService = document.getElementById('shipping_service').value;
+        isValid = isValid && shippingCost && shippingCourier && shippingService;
+    }
+    
+    submitBtn.disabled = !isValid;
+}
+
+async function checkShippingCost() {
+    const originCity = document.getElementById('origin_city').value.trim();
+    const destinationCity = document.getElementById('destination_city').value.trim();
+    const weight = document.getElementById('weight').value;
+
+    if (!originCity || !destinationCity || !weight) {
+        alert('Harap lengkapi semua field untuk cek ongkir.');
+        return;
+    }
+
+    const button = event.target;
+    const originalText = button.textContent;
+    button.textContent = 'Memproses...';
+    button.disabled = true;
+
+    try {
+        // Get origin subdistrict ID
+        const originResponse = await fetch('/api/shipping/subdistrict-id', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+            },
+            body: JSON.stringify({ city_name: originCity }),
+        });
+
+        const originData = await originResponse.json();
+
+        if (!originData.success || !originData.subdistrict_id) {
+            let message = `Kota asal "${originCity}" tidak ditemukan.`;
+            if (originData.suggestions && originData.suggestions.length > 0) {
+                message += '\n\nMungkin maksud Anda:\n';
+                message += originData.suggestions.map(s => `- ${s.city_name || s.name}`).join('\n');
+            }
+            alert(message);
+            button.textContent = originalText;
+            button.disabled = false;
+            return;
+        }
+
+        // Get destination subdistrict ID
+        const destinationResponse = await fetch('/api/shipping/subdistrict-id', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+            },
+            body: JSON.stringify({ city_name: destinationCity }),
+        });
+
+        const destinationData = await destinationResponse.json();
+
+        if (!destinationData.success || !destinationData.subdistrict_id) {
+            let message = `Kota tujuan "${destinationCity}" tidak ditemukan.`;
+            if (destinationData.suggestions && destinationData.suggestions.length > 0) {
+                message += '\n\nMungkin maksud Anda:\n';
+                message += destinationData.suggestions.map(s => `- ${s.city_name || s.name}`).join('\n');
+            }
+            alert(message);
+            button.textContent = originalText;
+            button.disabled = false;
+            return;
+        }
+
+        // Calculate shipping cost
+        const costResponse = await fetch('/api/shipping/calculate-cost', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content'),
+            },
+            body: JSON.stringify({
+                origin: originData.subdistrict_id,
+                destination: destinationData.subdistrict_id,
+                weight: parseInt(weight),
+                couriers: 'jne:jnt:tiki:pos',
+            }),
+        });
+
+        const costData = await costResponse.json();
+
+        if (costData.success && costData.data && costData.data.length > 0) {
+            displayShippingCosts(costData.data);
+        } else {
+            alert(costData.message || 'Tidak dapat menghitung ongkir. Silakan coba lagi.');
+        }
+    } catch (error) {
+        console.error('Error checking shipping cost:', error);
+        alert('Gagal cek ongkir. Silakan coba lagi.\n\nError: ' + error.message);
+    } finally {
+        button.textContent = originalText;
+        button.disabled = false;
+    }
+}
+
+function displayShippingCosts(services) {
+    const resultsDiv = document.getElementById('shipping-cost-results');
+    resultsDiv.classList.remove('hidden');
+    
+    // Get the container for results
+    const container = resultsDiv.querySelector('div');
+    container.innerHTML = '';
+
+    // Group services by courier
+    const groupedByCourier = {};
+    services.forEach(service => {
+        const courierCode = service.code.toUpperCase();
+        if (!groupedByCourier[courierCode]) {
+            groupedByCourier[courierCode] = {
+                name: service.name,
+                services: []
+            };
+        }
+        groupedByCourier[courierCode].services.push(service);
+    });
+
+    // Display services grouped by courier
+    Object.keys(groupedByCourier).forEach(courierCode => {
+        const courier = groupedByCourier[courierCode];
+        
+        const courierHeader = document.createElement('div');
+        courierHeader.className = 'font-bold text-xs text-gray-700 uppercase mt-3 first:mt-0 mb-2 px-2 sticky top-0 bg-white py-1';
+        courierHeader.textContent = `${courierCode}`;
+        container.appendChild(courierHeader);
+
+        courier.services.forEach(service => {
+            const serviceDiv = document.createElement('label');
+            serviceDiv.className = 'shipping-service-item flex items-start gap-3 p-3 mb-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition';
+            
+            const etdText = service.etd ? service.etd.replace(' day', ' hari').replace('HARI', 'hari') : 'Hubungi kurir';
+            
+            serviceDiv.innerHTML = `
+                <input type="radio" name="shipping_option" class="mt-1 text-primary focus:ring-primary" onchange="selectShippingService('${service.code}', '${service.service}', ${service.cost}, '${etdText}')">
+                <div class="flex-1">
+                    <div class="flex justify-between items-start gap-2 mb-1">
+                        <span class="font-semibold text-gray-900 text-sm">${service.service}</span>
+                        <span class="font-bold text-primary text-sm whitespace-nowrap">Rp ${parseInt(service.cost).toLocaleString('id-ID')}</span>
+                    </div>
+                    ${service.description ? `<p class="text-xs text-gray-600 mb-1">${service.description}</p>` : ''}
+                    <p class="text-xs text-gray-500">⏱ ${etdText}</p>
+                </div>
+            `;
+            
+            container.appendChild(serviceDiv);
+        });
+    });
+}
+
+function selectShippingService(courier, service, cost, etd) {
+    document.getElementById('shipping_courier').value = courier.toUpperCase();
+    document.getElementById('shipping_service').value = service;
+    document.getElementById('shipping_cost').value = cost;
+    
+    validateForm();
+    showNotification(`✓ ${courier.toUpperCase()} ${service} dipilih (Rp ${parseInt(cost).toLocaleString('id-ID')})`);
+}
+
+function showNotification(message) {
+    const existingNotif = document.querySelector('.shipping-notification');
+    if (existingNotif) existingNotif.remove();
+
+    const notification = document.createElement('div');
+    notification.className = 'shipping-notification fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+    notification.style.animation = 'slideIn 0.3s ease-out';
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
 }
 
 function openMarkAsSoldModal() {
@@ -478,194 +690,13 @@ function openMarkAsSoldModal() {
 
 function closeMarkAsSoldModal() {
     document.getElementById('mark-as-sold-modal').style.display = 'none';
-}
-
-async function toggleFavorite() {
-    const btn = document.getElementById('favorite-btn');
-    const text = document.getElementById('favorite-text');
-    const productId = '{{ $product->id }}';
-    
-    // Disable button during request
-    btn.disabled = true;
-    
-    try {
-        const response = await fetch(`/wishlist/${productId}/toggle`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}',
-            },
-        });
-        
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
-        }
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            // Update button state
-            if (data.is_favorite) {
-                btn.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
-                btn.classList.add('bg-red-500', 'text-white', 'hover:bg-red-600');
-                text.textContent = 'Hapus dari Favorit';
-            } else {
-                btn.classList.remove('bg-red-500', 'text-white', 'hover:bg-red-600');
-                btn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
-                text.textContent = 'Simpan ke Favorit';
-            }
-        } else {
-            alert('Gagal mengupdate favorit: ' + (data.error || 'Unknown error'));
-        }
-    } catch (error) {
-        console.error('Error toggling favorite:', error);
-        alert('Gagal mengupdate favorit. Silakan coba lagi.');
-    } finally {
-        btn.disabled = false;
-    }
-}
-
-function toggleShippingFields() {
-    const dealMethod = document.querySelector('input[name="deal_method"]:checked').value;
-    const meetupFields = document.getElementById('meetup-fields');
-    const shippingFields = document.getElementById('shipping-fields');
-    
-    if (dealMethod === 'meetup') {
-        meetupFields.classList.remove('hidden');
-        shippingFields.classList.add('hidden');
-        document.getElementById('meetup_location').required = true;
-        document.getElementById('shipping_cost').required = false;
-        document.getElementById('shipping_courier').required = false;
-        document.getElementById('shipping_service').required = false;
-    } else {
-        meetupFields.classList.add('hidden');
-        shippingFields.classList.remove('hidden');
-        document.getElementById('meetup_location').required = false;
-        document.getElementById('shipping_cost').required = true;
-        document.getElementById('shipping_courier').required = true;
-        document.getElementById('shipping_service').required = true;
-    }
-}
-
-function enableSubmitButton() {
-    const submitBtn = document.getElementById('submit-transaction-btn');
-    if (submitBtn) {
-        submitBtn.disabled = false;
-    }
-}
-
-async function checkShippingCost() {
-    const originCity = document.getElementById('origin_city').value;
-    const destinationCity = document.getElementById('destination_city').value;
-    const weight = document.getElementById('weight').value;
-    const courier = document.getElementById('courier').value;
-
-    if (!originCity || !destinationCity || !weight) {
-        alert('Harap lengkapi semua field untuk cek ongkir.');
-        return;
-    }
-
-    try {
-        // Get city IDs
-        const originResponse = await fetch('/api/shipping/city-id', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}',
-            },
-            body: JSON.stringify({ city_name: originCity }),
-        });
-
-        const destinationResponse = await fetch('/api/shipping/city-id', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}',
-            },
-            body: JSON.stringify({ city_name: destinationCity }),
-        });
-
-        const originData = await originResponse.json();
-        const destinationData = await destinationResponse.json();
-
-        if (!originData.success || !originData.city_id || !destinationData.success || !destinationData.city_id) {
-            alert('Kota tidak ditemukan. Pastikan nama kota benar.');
-            return;
-        }
-
-        // Check cost
-        const costResponse = await fetch('/api/shipping/check-cost', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}',
-            },
-            body: JSON.stringify({
-                origin: originData.city_id,
-                destination: destinationData.city_id,
-                weight: weight,
-                courier: courier,
-            }),
-        });
-
-        const costData = await costResponse.json();
-
-        if (costData.success && costData.data && costData.data.length > 0) {
-            displayShippingCosts(costData.data, courier);
-        } else {
-            alert('Gagal mendapatkan data ongkir. Silakan coba lagi.');
-        }
-    } catch (error) {
-        console.error('Error checking shipping cost:', error);
-        alert('Gagal cek ongkir. Silakan coba lagi.');
-    }
-}
-
-function displayShippingCosts(costs, courier) {
-    const resultsDiv = document.getElementById('shipping-cost-results');
-    resultsDiv.classList.remove('hidden');
-    resultsDiv.innerHTML = '<p class="font-semibold text-gray-900 mb-2">Pilih Layanan:</p>';
-
-    costs.forEach((service) => {
-        const cost = service.cost[0];
-        const serviceDiv = document.createElement('div');
-        serviceDiv.className = 'p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer';
-        serviceDiv.onclick = function() {
-            selectShippingService(this, courier, service.service, cost.value);
-        };
-        
-        serviceDiv.innerHTML = `
-            <div class="flex justify-between items-center">
-                <div>
-                    <p class="font-semibold text-gray-900">${service.service}</p>
-                    <p class="text-sm text-gray-600">${service.description || ''}</p>
-                </div>
-                <p class="font-bold text-primary">Rp ${parseInt(cost.value).toLocaleString('id-ID')}</p>
-            </div>
-        `;
-        
-        resultsDiv.appendChild(serviceDiv);
-    });
-}
-
-function selectShippingService(element, courier, service, cost) {
-    document.getElementById('shipping_courier').value = courier.toUpperCase();
-    document.getElementById('shipping_service').value = service;
-    document.getElementById('shipping_cost').value = cost;
-    
-    // Highlight selected service
-    const resultsDiv = document.getElementById('shipping-cost-results');
-    resultsDiv.querySelectorAll('div').forEach(div => {
-        div.classList.remove('bg-primary/10', 'border-primary');
-    });
-    if (element) {
-        element.classList.add('bg-primary/10', 'border-primary');
-    }
-    
-    alert(`Layanan ${service} dipilih. Ongkir: Rp ${parseInt(cost).toLocaleString('id-ID')}`);
+    // Reset form
+    document.getElementById('mark-as-sold-form')?.reset();
+    document.getElementById('shipping-cost-results').classList.add('hidden');
+    document.getElementById('shipping_cost').value = '';
+    document.getElementById('shipping_courier').value = '';
+    document.getElementById('shipping_service').value = '';
+    validateForm();
 }
 </script>
 @endpush

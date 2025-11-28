@@ -75,6 +75,10 @@ Route::get('/api/shipping/provinces', [ShippingController::class, 'getProvinces'
 Route::get('/api/shipping/cities', [ShippingController::class, 'getCities'])->name('api.shipping.cities');
 Route::post('/api/shipping/check-cost', [ShippingController::class, 'checkCost'])->name('api.shipping.check-cost');
 Route::post('/api/shipping/city-id', [ShippingController::class, 'getCityId'])->name('api.shipping.city-id');
+Route::get('/api/shipping/search-destinations', [ShippingController::class, 'searchDestinations'])->name('api.shipping.search-destinations');
+Route::post('api/shipping/subdistrict-id', [ShippingController::class, 'getSubdistrictId'])->name('api.shipping.subdistrict-id');
+Route::post('api/shipping/calculate-cost', [ShippingController::class, 'calculateCost'])->name('api.shipping.calculate-cost');
+Route::post('api/shipping/search-cities', [ShippingController::class, 'searchCities'])->name('api.shipping.search-cities');
 
 // Chat Routes
 Route::middleware('auth')->group(function () {
