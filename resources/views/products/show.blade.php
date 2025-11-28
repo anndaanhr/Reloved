@@ -470,6 +470,58 @@
 
 @push('scripts')
 <script>
+function changeMainImage(url) {
+    document.getElementById('main-image').src = url;
+}
+
+async function toggleFavorite() {
+    const btn = document.getElementById('favorite-btn');
+    const text = document.getElementById('favorite-text');
+    const productId = '{{ $product->id }}';
+    
+    // Disable button during request
+    btn.disabled = true;
+    
+    try {
+        const response = await fetch(`/wishlist/${productId}/toggle`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}',
+            },
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update button state
+            if (data.is_favorite) {
+                btn.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                btn.classList.add('bg-red-500', 'text-white', 'hover:bg-red-600');
+                text.textContent = 'Hapus dari Favorit';
+            } else {
+                btn.classList.remove('bg-red-500', 'text-white', 'hover:bg-red-600');
+                btn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                text.textContent = 'Simpan ke Favorit';
+            }
+        } else {
+            alert('Gagal mengupdate favorit: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        console.error('Error toggling favorite:', error);
+        alert('Gagal mengupdate favorit. Silakan coba lagi.');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
 function toggleShippingFields() {
     const dealMethod = document.querySelector('input[name="deal_method"]:checked').value;
     const meetupFields = document.getElementById('meetup-fields');
