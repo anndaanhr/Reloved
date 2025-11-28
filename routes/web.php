@@ -12,6 +12,8 @@ use App\Http\Controllers\ShippingController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WishlistController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -27,6 +29,13 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
     
+    // Forgot Password Routes
+    Route::get('forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])->name('password.request');
+    Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+    Route::get('forgot-password/sent', [ForgotPasswordController::class, 'showLinkSentResponse'])->name('password.sent');
+    Route::get('reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+    Route::post('reset-password', [ResetPasswordController::class, 'reset'])->name('password.update');
+
     // Google OAuth Routes
     Route::get('/auth/google', [AuthController::class, 'redirectToGoogle'])->name('auth.google');
     Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->name('auth.google.callback');
@@ -116,4 +125,3 @@ Route::middleware('auth')->group(function () {
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
     Route::get('/api/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('api.notifications.unread-count');
 });
-

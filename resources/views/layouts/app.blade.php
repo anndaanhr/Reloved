@@ -77,6 +77,7 @@
                                     <a href="{{ route('chat.index') }}" class="block px-4 py-2 text-sm text-text-primary hover:bg-gray-50 transition">Pesan</a>
                                     <a href="{{ route('notifications.index') }}" class="block px-4 py-2 text-sm text-text-primary hover:bg-gray-50 transition">Notifikasi</a>
                                     <a href="{{ route('wishlist.index') }}" class="block px-4 py-2 text-sm text-text-primary hover:bg-gray-50 transition">Favorit</a>
+                                    <a href="{{ route('transactions.index') }}" class="block px-4 py-2 text-sm text-text-primary hover:bg-gray-50 transition">Transaksi</a>
                                     <form method="POST" action="{{ route('logout') }}">
                                         @csrf
                                         <button type="submit" class="w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-gray-50 transition">Logout</button>
