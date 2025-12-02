@@ -141,8 +141,10 @@ class OfferController extends Controller
             $message = Message::create([
                 'conversation_id' => $offer->conversation_id,
                 'sender_id' => Auth::id(),
-                'message' => "Saya menerima tawaran Rp " . number_format($offer->amount, 0, ',', '.'),
-                'message_type' => 'text',
+                'message' => "Tawaran diterima! Menunggu pembayaran dari Anda.",
+                'message_type' => 'offer',
+                'offer_amount' => $offer->amount,
+                'offer_status' => 'accepted',
                 'is_read' => false,
             ]);
 
@@ -172,7 +174,7 @@ class OfferController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Tawaran diterima!',
+                'message' => $message->load('sender'),
                 'offer' => $offer->fresh(),
             ]);
         } catch (\Exception $e) {
@@ -211,8 +213,10 @@ class OfferController extends Controller
             $message = Message::create([
                 'conversation_id' => $offer->conversation_id,
                 'sender_id' => Auth::id(),
-                'message' => "Saya menolak tawaran Rp " . number_format($offer->amount, 0, ',', '.'),
-                'message_type' => 'text',
+                'message' => "Tawaran ditolak. Anda bisa mengajukan tawaran baru atau melanjutkan chat.",
+                'message_type' => 'offer',
+                'offer_amount' => $offer->amount,
+                'offer_status' => 'rejected',
                 'is_read' => false,
             ]);
 
@@ -235,7 +239,7 @@ class OfferController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Tawaran ditolak.',
+                'message' => $message->load('sender'),
                 'offer' => $offer->fresh(),
             ]);
         } catch (\Exception $e) {
