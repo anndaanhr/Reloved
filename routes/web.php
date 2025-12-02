@@ -85,7 +85,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/chat', [ChatController::class, 'index'])->name('chat.index');
     Route::get('/chat/create', [ChatController::class, 'create'])->name('chat.create');
     Route::get('/chat/{id}', [ChatController::class, 'show'])->name('chat.show');
-    Route::post('/chat/{id}', [ChatController::class, 'store'])->name('chat.store');
+    Route::post('/chat/{id}/send', [ChatController::class, 'store'])->name('chat.store');
     Route::post('/chat/{id}/read', [ChatController::class, 'markAsRead'])->name('chat.read');
     Route::get('/api/products/{productId}/buyers', [ChatController::class, 'getBuyersForProduct'])->name('api.products.buyers');
     

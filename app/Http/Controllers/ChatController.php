@@ -144,7 +144,7 @@ class ChatController extends Controller
         DB::beginTransaction();
 
         try {
-            // Tentukan tipe pesan
+            // Tentukan tipe pesanmessage
             $messageType = $request->filled('offer_amount') ? 'offer' : 'text';
 
             $message = Message::create([

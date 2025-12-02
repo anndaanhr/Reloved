@@ -364,29 +364,36 @@
                 }
             },
 
-            async sendMessage() {
-                if (!this.newMessage.trim()) return;
-                try {
-                    const response = await fetch(`{{ route('chat.store', $conversation->id) }}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        },
-                        body: JSON.stringify({ message: this.newMessage }),
-                    });
-                    const data = await response.json();
-                    if (data.success) {
-                        this.newMessage = '';
-                        this.appendMessage(data.message);
-                    } else {
-                        alert('Gagal mengirim pesan: ' + (data.error || 'Unknown error'));
-                    }
-                } catch (error) {
-                    console.error('Error sending message:', error);
-                    alert('Gagal mengirim pesan');
+          async sendMessage() {
+            if (!this.newMessage.trim()) return;
+
+            try {
+                const response = await fetch(`/chat/${this.conversationId}/send`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': this.csrf,
+                    },
+                    body: JSON.stringify({
+                        message: this.newMessage,
+                        offer_amount: null, // penting karena controller cek 2 field ini
+                    }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    this.newMessage = '';
+                    this.appendMessage(data.message);
+                } else {
+                    alert('Gagal mengirim pesan: ' + (data.error || 'Unknown error'));
                 }
-            },
+            } catch (error) {
+                console.error('Error sending message:', error);
+                alert('Gagal mengirim pesan');
+            }
+        }
+
 
             acceptOffer(conversationId, messageId) {
                 this.acceptOfferConversationId = conversationId;
