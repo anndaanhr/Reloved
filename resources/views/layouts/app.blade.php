@@ -67,12 +67,20 @@
                                 </svg>
                                 <span id="notification-badge" class="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center hidden">0</span>
                             </a>
-                            <!-- Placeholder for user avatar -->
+                            <!-- User Avatar -->
                             <div class="relative">
-                                <button @click="open = !open" class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center hover:bg-gray-300 transition">
-                                    <span class="text-text-secondary font-semibold text-sm">{{ substr(auth()->user()->name, 0, 1) }}</span>
+                                <button @click="open = !open" class="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden hover:bg-gray-300 transition">
+                                    @if(auth()->user()->avatar)
+                                        <img src="{{ auth()->user()->avatar }}" alt="{{ auth()->user()->name }}" class="w-full h-full object-cover">
+                                    @else
+                                        <span class="text-text-secondary font-semibold text-sm">{{ substr(auth()->user()->name, 0, 1) }}</span>
+                                    @endif
                                 </button>
                                 <div x-show="open" @click.away="open = false" class="absolute right-0 mt-2 w-48 bg-white rounded-10 shadow-lg border border-border py-2 z-50" style="display: none;">
+                                    <div class="px-4 py-2 border-b border-border">
+                                        <p class="text-sm font-semibold text-text-primary">{{ auth()->user()->name }}</p>
+                                        <p class="text-xs text-text-secondary truncate">{{ auth()->user()->email }}</p>
+                                    </div>
                                     <a href="{{ route('profile.show') }}" class="block px-4 py-2 text-sm text-text-primary hover:bg-gray-50 transition">Profile</a>
                                     <a href="{{ route('chat.index') }}" class="block px-4 py-2 text-sm text-text-primary hover:bg-gray-50 transition">Pesan</a>
                                     <a href="{{ route('notifications.index') }}" class="block px-4 py-2 text-sm text-text-primary hover:bg-gray-50 transition">Notifikasi</a>
@@ -80,7 +88,7 @@
                                     <a href="{{ route('transactions.index') }}" class="block px-4 py-2 text-sm text-text-primary hover:bg-gray-50 transition">Transaksi</a>
                                     <form method="POST" action="{{ route('logout') }}">
                                         @csrf
-                                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-text-primary hover:bg-gray-50 transition">Logout</button>
+                                        <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition">Logout</button>
                                     </form>
                                 </div>
                             </div>
@@ -332,5 +340,4 @@
             </script>
         </body>
         </html>
-
 
