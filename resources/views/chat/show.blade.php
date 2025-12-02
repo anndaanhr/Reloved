@@ -3,43 +3,7 @@
 @section('title', 'Chat - Reloved')
 
 @section('content')
-<div class="container mx-auto px-8 py-8" x-data="chat()">
-    <!-- Accept Offer Modal -->
-    <div x-show="showAcceptModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" style="display: none;">
-        <div @click.away="showAcceptModal = false" class="bg-white rounded-16 shadow-lg p-6 w-full max-w-sm">
-            <h3 class="text-lg font-bold text-text-primary mb-4">Terima Tawaran</h3>
-            <p class="text-sm text-text-secondary mb-6">Apakah Anda yakin ingin menerima tawaran ini? Tindakan ini tidak dapat dibatalkan.</p>
-            <p x-show="acceptOfferErrorMessage" x-text="acceptOfferErrorMessage" class="text-sm text-red-600 mb-4"></p>
-            
-            <div class="flex justify-end gap-4">
-                <button @click="showAcceptModal = false" class="text-sm font-semibold text-text-secondary px-4 py-2 rounded-10 hover:bg-gray-100 transition">
-                    Batal
-                </button>
-                <button @click="confirmAcceptOffer()" class="text-sm font-semibold text-white bg-primary px-4 py-2 rounded-10 hover:bg-primary/90 transition">
-                    Ya, Terima
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Reject Offer Modal -->
-    <div x-show="showRejectModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" style="display: none;">
-        <div @click.away="showRejectModal = false" class="bg-white rounded-16 shadow-lg p-6 w-full max-w-sm">
-            <h3 class="text-lg font-bold text-text-primary mb-4">Tolak Tawaran</h3>
-            <p class="text-sm text-text-secondary mb-6">Apakah Anda yakin ingin menolak tawaran ini?</p>
-            <p x-show="rejectOfferErrorMessage" x-text="rejectOfferErrorMessage" class="text-sm text-red-600 mb-4"></p>
-            
-            <div class="flex justify-end gap-4">
-                <button @click="showRejectModal = false" class="text-sm font-semibold text-text-secondary px-4 py-2 rounded-10 hover:bg-gray-100 transition">
-                    Batal
-                </button>
-                <button @click="confirmRejectOffer()" class="text-sm font-semibold text-white bg-red-500 px-4 py-2 rounded-10 hover:bg-red-600 transition">
-                    Ya, Tolak
-                </button>
-            </div>
-        </div>
-    </div>
-
+<div class="container mx-auto px-8 py-8">
     <div class="max-w-6xl mx-auto">
         <h1 class="text-xl font-bold text-text-primary mb-6">Pesan Saya</h1>
 
@@ -117,7 +81,7 @@
                     <!-- Messages -->
                     <div id="messages-container" class="flex-1 overflow-y-auto p-4 space-y-4">
                         @foreach($conversation->messages as $message)
-                            <div class="flex {{ $message->sender_id === Auth::id() ? 'justify-end' : 'justify-start' }}" data-message-id="{{ $message->id }}">
+                            <div class="flex {{ $message->sender_id === Auth::id() ? 'justify-end' : 'justify-start' }}">
                                     <div class="max-w-xs lg:max-w-md">
                                     @if($message->sender_id !== Auth::id())
                                         <p class="text-xs text-text-secondary mb-1">{{ $message->sender->name }}</p>
@@ -133,13 +97,13 @@
                                             </div>
                                             @if($message->offer_status === 'pending' && $message->sender_id !== Auth::id() && Auth::id() === $conversation->seller_id)
                                                 <div class="flex gap-2 mt-2">
-                                                    <button @click="acceptOffer('{{ $conversation->id }}', '{{ $message->id }}')" class="text-xs px-3 py-1 bg-primary text-white rounded-8 hover:opacity-90 transition">
+                                                    <button onclick="acceptOffer('{{ $conversation->id }}', '{{ $message->id }}')" class="text-xs px-3 py-1 bg-primary text-white rounded-8 hover:opacity-90 transition">
                                                         Terima
                                                     </button>
-                                                    <button @click="rejectOffer('{{ $conversation->id }}', '{{ $message->id }}')" class="text-xs px-3 py-1 bg-red-500 text-white rounded-8 hover:bg-red-600 transition">
+                                                    <button onclick="rejectOffer('{{ $conversation->id }}', '{{ $message->id }}')" class="text-xs px-3 py-1 bg-red-500 text-white rounded-8 hover:bg-red-600 transition">
                                                         Tolak
                                                     </button>
-                                                    <button @click="openCounterOfferModal('{{ $conversation->id }}', '{{ $message->id }}', {{ $message->offer_amount }}, {{ $message->offer_counter_count }})" class="text-xs px-3 py-1 bg-yellow-500 text-white rounded-8 hover:bg-yellow-600 transition">
+                                                    <button onclick="openCounterOfferModal('{{ $conversation->id }}', '{{ $message->id }}', {{ $message->offer_amount }}, {{ $message->offer_counter_count }})" class="text-xs px-3 py-1 bg-yellow-500 text-white rounded-8 hover:bg-yellow-600 transition">
                                                         Tawar Balik
                                                     </button>
                                                 </div>
@@ -160,16 +124,17 @@
                         @if($conversation->product && Auth::id() === $conversation->buyer_id)
                             <!-- Buyer: Can make offer -->
                             <div class="mb-2">
-                                <button @click="openMakeOfferModal('{{ $conversation->id }}', {{ $conversation->product->price }})" class="text-sm bg-yellow-500 text-white px-4 py-2 rounded-10 font-semibold hover:bg-yellow-600 transition">
+                                <button onclick="openMakeOfferModal('{{ $conversation->id }}', {{ $conversation->product->price }})" class="text-sm bg-yellow-500 text-white px-4 py-2 rounded-10 font-semibold hover:bg-yellow-600 transition">
                                     💰 Tawar Harga
                                 </button>
                             </div>
                         @endif
-                        <form id="message-form" @submit.prevent="sendMessage" class="flex gap-2">
+                        <form id="message-form" class="flex gap-2">
                             @csrf
                             <input 
                                 type="text" 
-                                x-model="newMessage"
+                                id="message-input" 
+                                name="message" 
                                 placeholder="Ketik pesan..."
                                 class="flex-1 h-10 px-4 py-2 border border-border rounded-10 text-sm text-text-primary placeholder:text-placeholder focus:ring-2 focus:ring-primary focus:border-primary transition"
                                 autocomplete="off"
@@ -190,347 +155,223 @@
             </div>
         </div>
     </div>
-
-    <!-- Counter Offer Modal -->
-    <div x-show="showCounterOfferModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" style="display: none;">
-        <div @click.away="showCounterOfferModal = false" class="bg-white rounded-16 shadow-lg p-6 w-full max-w-md">
-            <h3 class="text-lg font-bold text-text-primary mb-4">Buat Penawaran Balik</h3>
-            <p class="text-sm text-text-secondary mb-4">
-                Tawaran saat ini: <span class="font-semibold">Rp <span x-text="counterOfferOriginalAmount.toLocaleString('id-ID')"></span></span>.
-                Masukkan harga penawaran baru Anda di bawah ini.
-            </p>
-            
-            <div class="space-y-2">
-                <label for="counter-offer-input" class="block text-sm font-medium text-text-primary">Harga Tawar Balik (Rp)</label>
-                <input type="number" id="counter-offer-input" x-model.number="counterOfferInput" class="w-full h-10 px-4 py-2 border border-border rounded-10 text-sm text-text-primary placeholder:text-placeholder focus:ring-2 focus:ring-primary focus:border-primary transition" placeholder="e.g. 120000">
-                <p x-show="errorMessage" x-text="errorMessage" class="text-sm text-red-600 mt-1"></p>
-            </div>
-
-            <div class="flex justify-end gap-4 mt-6">
-                <button @click="showCounterOfferModal = false" class="text-sm font-semibold text-text-secondary px-4 py-2 rounded-10 hover:bg-gray-100 transition">
-                    Batal
-                </button>
-                <button @click="submitCounterOffer()" class="text-sm font-semibold text-white bg-primary px-4 py-2 rounded-10 hover:bg-primary/90 transition">
-                    Kirim Tawar Balik
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Make Offer Modal -->
-    <div x-show="showMakeOfferModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" style="display: none;">
-        <div @click.away="showMakeOfferModal = false" class="bg-white rounded-16 shadow-lg p-6 w-full max-w-md">
-            <h3 class="text-lg font-bold text-text-primary mb-4">Ajukan Penawaran</h3>
-            <p class="text-sm text-text-secondary mb-4">
-                Harga produk: <span class="font-semibold">Rp <span x-text="makeOfferProductPrice.toLocaleString('id-ID')"></span></span>.
-                Tawaran Anda harus lebih rendah dari harga produk.
-            </p>
-            
-            <div class="space-y-2">
-                <label for="make-offer-input" class="block text-sm font-medium text-text-primary">Harga Penawaran Anda (Rp)</label>
-                <input type="number" id="make-offer-input" x-model.number="makeOfferInput" class="w-full h-10 px-4 py-2 border border-border rounded-10 text-sm text-text-primary placeholder:text-placeholder focus:ring-2 focus:ring-primary focus:border-primary transition" placeholder="e.g. 80000">
-                <p x-show="errorMessage" x-text="errorMessage" class="text-sm text-red-600 mt-1"></p>
-            </div>
-
-            <div class="flex justify-end gap-4 mt-6">
-                <button @click="showMakeOfferModal = false" class="text-sm font-semibold text-text-secondary px-4 py-2 rounded-10 hover:bg-gray-100 transition">
-                    Batal
-                </button>
-                <button @click="submitMakeOffer()" class="text-sm font-semibold text-white bg-primary px-4 py-2 rounded-10 hover:bg-primary/90 transition">
-                    Kirim Penawaran
-                </button>
-            </div>
-        </div>
-    </div>
 </div>
 
 @if($conversation)
 @push('scripts')
 <script>
-    function chat() {
-        return {
-            // State
-            newMessage: '',
-            showCounterOfferModal: false,
-            counterOfferConversationId: null,
-            counterOfferMessageId: null,
-            counterOfferOriginalAmount: 0,
-            counterOfferInput: '',
-            showMakeOfferModal: false,
-            makeOfferConversationId: null,
-            makeOfferProductPrice: 0,
-            makeOfferInput: '',
-            errorMessage: '',
-            showAcceptModal: false,
-            acceptOfferConversationId: null,
-            acceptOfferMessageId: null,
-            showRejectModal: false,
-            rejectOfferConversationId: null,
-            rejectOfferMessageId: null,
-            acceptOfferErrorMessage: '',
-            rejectOfferErrorMessage: '',
+    const conversationId = '{{ $conversation->id }}';
+    const currentUserId = '{{ Auth::id() }}';
+    const messagesContainer = document.getElementById('messages-container');
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.getElementById('message-input');
 
-            // Init
-            init() {
-                const messagesContainer = document.getElementById('messages-container');
-                if (messagesContainer) {
-                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    async function loadMessages() {
+        try {
+            const response = await fetch(`/chat/${conversationId}?ajax=1`, {
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
                 }
-                
-                if (typeof window.Echo !== 'undefined') {
-                    console.log('Echo is defined, subscribing to channel.');
-                    window.Echo.private('chat.{{ $conversation->id }}')
-                        .listen('.MessageSent', (e) => {
-                            console.log('Message received via Echo:', e.message);
-                            this.appendMessage(e.message);
-                            this.loadMessages(); // Reload to update offer statuses and buttons
-                        });
-                } else {
-                    console.log("Realtime disabled → using polling mode only");
-                    setInterval(() => this.loadMessages(), 5000);
-                }
-            },
+            });
 
-            // Methods
-            appendMessage(message) {
-                if (document.querySelector(`[data-message-id="${message.id}"]`)) {
-                    return;
-                }
+            const html = await response.text();
 
-                const messagesContainer = document.getElementById('messages-container');
-                const messageEl = document.createElement('div');
-                const isSender = message.sender_id === {{ Auth::id() }};
-                
-                messageEl.className = `flex ${isSender ? 'justify-end' : 'justify-start'}`;
-                messageEl.setAttribute('data-message-id', message.id);
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, "text/html");
+            const newMessages = doc.querySelector('#messages-container');
 
-                let senderName = '';
-                if (!isSender && message.sender) {
-                    senderName = `<p class="text-xs text-text-secondary mb-1">${message.sender.name}</p>`;
-                }
-
-                let offerDetails = '';
-                if (message.message_type === 'offer') {
-                    const status = message.offer_status.charAt(0).toUpperCase() + message.offer_status.slice(1).replace('_', ' ');
-                    offerDetails = `
-                        <div class="mb-2">
-                            <p class="text-sm font-semibold">Tawaran: Rp ${Number(message.offer_amount).toLocaleString('id-ID')}</p>
-                            <p class="text-xs opacity-75">Status: ${status}</p>
-                        </div>
-                    `;
-                }
-
-                const messageContent = message.message ? `<p class="text-sm">${message.message}</p>` : '';
-
-                const messageDate = new Date(message.created_at);
-                const time = `${String(messageDate.getHours()).padStart(2, '0')}:${String(messageDate.getMinutes()).padStart(2, '0')}`;
-
-                messageEl.innerHTML = `
-                    <div class="max-w-xs lg:max-w-md">
-                        ${senderName}
-                        <div class="rounded-10 p-3 ${isSender ? 'bg-primary text-white' : 'bg-gray-100 text-text-primary'}">
-                            ${offerDetails}
-                            ${messageContent}
-                        </div>
-                        <p class="text-xs text-text-tertiary mt-1">${time}</p>
-                    </div>
-                `;
-
-                messagesContainer.appendChild(messageEl);
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            },
-
-            async loadMessages() {
-                try {
-                    const response = await fetch(`{{ route('chat.show', $conversation->id) }}?ajax=1`, {
-                        headers: { "X-Requested-With": "XMLHttpRequest" }
-                    });
-                    const html = await response.text();
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, "text/html");
-                    const newMessages = doc.querySelector('#messages-container');
-                    if (newMessages) {
-                        const messagesContainer = document.getElementById('messages-container');
-                        const isScrolledToBottom = messagesContainer.scrollHeight - messagesContainer.clientHeight <= messagesContainer.scrollTop + 1;
-                        
-                        messagesContainer.innerHTML = newMessages.innerHTML;
-                        
-                        if (isScrolledToBottom) {
-                            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                        }
-                    }
-                } catch (error) {
-                    console.log("Load messages error:", error);
-                }
-            },
-
-            async sendMessage() {
-                if (!this.newMessage.trim()) return;
-                try {
-                    const response = await fetch(`{{ route('chat.store', $conversation->id) }}`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        },
-                        body: JSON.stringify({ message: this.newMessage }),
-                    });
-                    const data = await response.json();
-                    if (data.success) {
-                        this.newMessage = '';
-                        this.appendMessage(data.message);
-                    } else {
-                        alert('Gagal mengirim pesan: ' + (data.error || 'Unknown error'));
-                    }
-                } catch (error) {
-                    console.error('Error sending message:', error);
-                    alert('Gagal mengirim pesan');
-                }
-            },
-
-            acceptOffer(conversationId, messageId) {
-                this.acceptOfferConversationId = conversationId;
-                this.acceptOfferMessageId = messageId;
-                this.acceptOfferErrorMessage = '';
-                this.showAcceptModal = true;
-            },
-
-            async confirmAcceptOffer() {
-                this.acceptOfferErrorMessage = '';
-                try {
-                    const response = await fetch(`/chat/${this.acceptOfferConversationId}/offers/${this.acceptOfferMessageId}/accept`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                    });
-                    const data = await response.json();
-                    if (data.success) {
-                        this.appendMessage(data.message);
-                        this.loadMessages(); // Reload to update buttons and statuses
-                        this.showAcceptModal = false;
-                    } else {
-                        this.acceptOfferErrorMessage = data.error || 'Gagal menerima tawaran.';
-                    }
-                } catch (error) { 
-                    console.error('Error accepting offer:', error); 
-                    this.acceptOfferErrorMessage = 'Gagal menerima tawaran.';
-                }
-            },
-
-            rejectOffer(conversationId, messageId) {
-                this.rejectOfferConversationId = conversationId;
-                this.rejectOfferMessageId = messageId;
-                this.rejectOfferErrorMessage = '';
-                this.showRejectModal = true;
-            },
-
-            async confirmRejectOffer() {
-                this.rejectOfferErrorMessage = '';
-                try {
-                    const response = await fetch(`/chat/${this.rejectOfferConversationId}/offers/${this.rejectOfferMessageId}/reject`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                    });
-                    const data = await response.json();
-                    if (data.success) {
-                        this.appendMessage(data.message);
-                        this.loadMessages(); // Reload to update buttons and statuses
-                        this.showRejectModal = false;
-                    } else {
-                        this.rejectOfferErrorMessage = data.error || 'Gagal menolak tawaran.';
-                    }
-                } catch (error) { 
-                    console.error('Error rejecting offer:', error);
-                    this.rejectOfferErrorMessage = 'Gagal menolak tawaran.';
-                }
-            },
-
-            // Counter Offer Modal
-            openCounterOfferModal(conversationId, messageId, currentAmount, counterCount) {
-                const maxCounter = {{ \App\Models\Offer::MAX_COUNTER_COUNT }};
-                if (counterCount >= maxCounter) {
-                    alert(`Batas tawaran sudah tercapai (maksimal ${maxCounter} kali).`);
-                    return;
-                }
-                this.counterOfferConversationId = conversationId;
-                this.counterOfferMessageId = messageId;
-                this.counterOfferOriginalAmount = currentAmount;
-                this.counterOfferInput = '';
-                this.errorMessage = '';
-                this.showCounterOfferModal = true;
-            },
-
-            async submitCounterOffer() {
-                this.errorMessage = '';
-                if (!this.counterOfferInput || isNaN(this.counterOfferInput) || this.counterOfferInput <= 0) {
-                    this.errorMessage = 'Masukkan jumlah yang valid.';
-                    return;
-                }
-                if (this.counterOfferInput <= this.counterOfferOriginalAmount) {
-                    this.errorMessage = 'Tawaran balik harus lebih tinggi dari tawaran sebelumnya.';
-                    return;
-                }
-
-                try {
-                    const response = await fetch(`/chat/${this.counterOfferConversationId}/offers/${this.counterOfferMessageId}/counter`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                        body: JSON.stringify({ counter_amount: this.counterOfferInput }),
-                    });
-                    const data = await response.json();
-                    if (data.success) {
-                        this.showCounterOfferModal = false;
-                        this.appendMessage(data.message);
-                        this.loadMessages(); // Reload to update buttons and statuses
-                    } else {
-                        this.errorMessage = data.error || 'Gagal mengirim tawar balik.';
-                    }
-                } catch (error) {
-                    console.error('Error countering offer:', error);
-                    this.errorMessage = 'Terjadi kesalahan.';
-                }
-            },
-
-            // Make Offer Modal
-            openMakeOfferModal(conversationId, productPrice) {
-                this.makeOfferConversationId = conversationId;
-                this.makeOfferProductPrice = productPrice;
-                this.makeOfferInput = '';
-                this.errorMessage = '';
-                this.showMakeOfferModal = true;
-            },
-
-            async submitMakeOffer() {
-                this.errorMessage = '';
-                if (!this.makeOfferInput || isNaN(this.makeOfferInput) || this.makeOfferInput <= 0) {
-                    this.errorMessage = 'Masukkan jumlah yang valid.';
-                    return;
-                }
-                if (this.makeOfferInput >= this.makeOfferProductPrice) {
-                    this.errorMessage = 'Tawaran harus lebih rendah dari harga produk.';
-                    return;
-                }
-
-                try {
-                    const response = await fetch(`/chat/${this.makeOfferConversationId}/offers`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                        body: JSON.stringify({ offer_amount: this.makeOfferInput }),
-                    });
-                    const data = await response.json();
-                    if (data.success) {
-                        this.showMakeOfferModal = false;
-                        this.appendMessage(data.message);
-                    } else {
-                        this.errorMessage = data.error || 'Gagal membuat tawaran.';
-                    }
-                } catch (error) {
-                    console.error('Error making offer:', error);
-                    this.errorMessage = 'Terjadi kesalahan.';
-                }
+            if (newMessages) {
+                messagesContainer.innerHTML = newMessages.innerHTML;
+                scrollToBottom();
             }
+        } catch (error) {
+            console.log("Load messages error:", error);
         }
     }
+
+    setInterval(() => {
+        loadMessages();
+    }, 5000);
+
+
+    console.log("Realtime disabled → using polling mode only");
+
+
+    /**
+     * SEND MESSAGE
+     */
+    messageForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const message = messageInput.value.trim();
+        if (!message) return;
+
+        try {
+            const response = await fetch(`{{ route('chat.store', $conversation->id) }}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}',
+                },
+                body: JSON.stringify({ message }),
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                messageInput.value = '';
+                loadMessages();
+                scrollToBottom();
+            } else {
+                alert('Gagal mengirim pesan: ' + (data.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+            alert('Gagal mengirim pesan');
+        }
+    });
+
+
+    /** RENDER MANUAL MESSAGE (tidak dipakai jika polling berjalan) */
+    function addMessageToChat(messageData) {
+        const isOwnMessage = messageData.sender_id == currentUserId;
+
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`;
+        
+        messageDiv.innerHTML = `
+            <div class="max-w-xs lg:max-w-md">
+                ${!isOwnMessage ? `<p class="text-xs text-gray-600 mb-1">${messageData.sender_name}</p>` : ''}
+                <div class="rounded-lg p-3 ${isOwnMessage ? 'bg-primary text-white' : 'bg-gray-100 text-gray-900'}">
+                    ${messageData.message ? `<p class="text-sm">${messageData.message}</p>` : ''}
+                </div>
+                <p class="text-xs text-gray-500 mt-1">${new Date(messageData.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}</p>
+            </div>
+        `;
+        
+        messagesContainer.appendChild(messageDiv);
+    }
+
+
+    function scrollToBottom() {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    /**
+     * OFFER FUNCTIONS — 
+     */
+
+    function openMakeOfferModal(conversationId, productPrice) {
+        const amount = prompt(`Masukkan tawaran Anda (maksimal Rp ${productPrice.toLocaleString('id-ID')}):`, '');
+        if (amount && !isNaN(amount) && parseFloat(amount) > 0 && parseFloat(amount) < productPrice) {
+            makeOffer(conversationId, parseFloat(amount));
+        } else if (amount) {
+            alert('Tawaran tidak valid. Harus lebih rendah dari harga produk.');
+        }
+    }
+
+    async function makeOffer(conversationId, amount) {
+        try {
+            const response = await fetch(`/chat/${conversationId}/offers`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}',
+                },
+                body: JSON.stringify({ offer_amount: amount }),
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                loadMessages();
+            } else {
+                alert('Gagal membuat tawaran: ' + (data.error || 'Unknown error'));
+            }
+        } catch (error) {
+            console.error('Error making offer:', error);
+        }
+    }
+
+    async function acceptOffer(conversationId, messageId) {
+        if (!confirm('Terima tawaran ini?')) return;
+
+        try {
+            const response = await fetch(`/chat/${conversationId}/offers/${messageId}/accept`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}',
+                },
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                loadMessages();
+            }
+        } catch (error) {
+            console.error('Error accepting offer:', error);
+        }
+    }
+
+    async function rejectOffer(conversationId, messageId) {
+        if (!confirm('Tolak tawaran ini?')) return;
+
+        try {
+            const response = await fetch(`/chat/${conversationId}/offers/${messageId}/reject`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}',
+                },
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                loadMessages();
+            }
+        } catch (error) {
+            console.error('Error rejecting offer:', error);
+        }
+    }
+
+    function openCounterOfferModal(conversationId, messageId, currentAmount, counterCount) {
+        const maxCounter = {{ \App\Models\Offer::MAX_COUNTER_COUNT }};
+        if (counterCount >= maxCounter) {
+            alert(`Batas tawaran sudah tercapai (maksimal ${maxCounter} kali).`);
+            return;
+        }
+
+        const amount = prompt(`Masukkan tawaran balik Anda (harus lebih tinggi dari Rp ${currentAmount.toLocaleString('id-ID')}):`, '');
+        if (amount && !isNaN(amount) && parseFloat(amount) > currentAmount) {
+            counterOffer(conversationId, messageId, parseFloat(amount));
+        } else if (amount) {
+            alert('Tawaran balik harus lebih tinggi dari tawaran sebelumnya.');
+        }
+    }
+
+    async function counterOffer(conversationId, messageId, amount) {
+        try {
+            const response = await fetch(`/chat/${conversationId}/offers/${messageId}/counter`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}',
+                },
+                body: JSON.stringify({ counter_amount: amount }),
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                loadMessages();
+            }
+        } catch (error) {
+            console.error('Error countering offer:', error);
+        }
+    }
+
+    scrollToBottom();
 </script>
+
 @endpush
 @endif
 @endsection
