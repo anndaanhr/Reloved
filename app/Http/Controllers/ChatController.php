@@ -17,23 +17,31 @@ class ChatController extends Controller
         private NotificationService $notificationService
     ) {}
 
+    /**
+     * LIST CONVERSATIONS
+     */
     public function index()
     {
         $conversations = Conversation::with(['product.images', 'buyer', 'seller'])
             ->forUser(Auth::id())
             ->orderBy('last_message_at', 'desc')
             ->get();
-        
+
         $conversations->load(['messages' => function ($query) {
             $query->latest()->limit(1);
         }]);
 
         $conversation = null;
+
         if (request()->has('id')) {
-            $conversation = Conversation::with(['product.images', 'buyer', 'seller', 'messages.sender'])
-                ->find(request('id'));
-            
-            if ($conversation && ($conversation->buyer_id === Auth::id() || $conversation->seller_id === Auth::id())) {
+            $conversation = Conversation::with([
+                'product.images',
+                'buyer',
+                'seller',
+                'messages.sender'
+            ])->find(request('id'));
+
+            if ($conversation && $this->isUserInConversation($conversation)) {
                 $conversation->messages()
                     ->where('sender_id', '!=', Auth::id())
                     ->where('is_read', false)
@@ -46,15 +54,24 @@ class ChatController extends Controller
         return view('chat.index', compact('conversations', 'conversation'));
     }
 
+    /**
+     * SHOW SINGLE THREAD
+     */
     public function show(string $id)
     {
-        $conversation = Conversation::with(['product.images', 'buyer', 'seller', 'messages.sender', 'offers'])
-            ->findOrFail($id);
+        $conversation = Conversation::with([
+            'product.images',
+            'buyer',
+            'seller',
+            'messages.sender',
+            'offers'
+        ])->findOrFail($id);
 
-        if ($conversation->buyer_id !== Auth::id() && $conversation->seller_id !== Auth::id()) {
+        if (!$this->isUserInConversation($conversation)) {
             abort(403);
         }
 
+        // Tandai pesan terbaca
         $conversation->messages()
             ->where('sender_id', '!=', Auth::id())
             ->where('is_read', false)
@@ -64,7 +81,7 @@ class ChatController extends Controller
             ->forUser(Auth::id())
             ->orderBy('last_message_at', 'desc')
             ->get();
-        
+
         $conversations->load(['messages' => function ($query) {
             $query->latest()->limit(1);
         }]);
@@ -72,6 +89,9 @@ class ChatController extends Controller
         return view('chat.show', compact('conversation', 'conversations'));
     }
 
+    /**
+     * START NEW CONVERSATION
+     */
     public function create(Request $request)
     {
         $request->validate([
@@ -81,14 +101,14 @@ class ChatController extends Controller
         $product = Product::findOrFail($request->product_id);
 
         if ($product->user_id === Auth::id()) {
-            return back()->withErrors(['error' => 'Anda tidak bisa chat dengan diri sendiri.']);
+            return back()->withErrors(['error' => 'Tidak bisa chat dengan diri sendiri.']);
         }
 
         $conversation = Conversation::firstOrCreate(
             [
                 'product_id' => $product->id,
-                'buyer_id' => Auth::id(),
-                'seller_id' => $product->user_id,
+                'buyer_id'   => Auth::id(),
+                'seller_id'  => $product->user_id,
             ],
             [
                 'last_message_at' => now(),
@@ -98,53 +118,63 @@ class ChatController extends Controller
         return redirect()->route('chat.show', $conversation->id);
     }
 
+    /**
+     * SEND MESSAGE
+     */
     public function store(Request $request, string $id)
     {
         $request->validate([
-            'message' => ['required_without:offer_amount', 'string', 'max:1000'],
-            'offer_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'message'      => ['required_without:offer_amount', 'string', 'nullable', 'max:1000'],
+            'offer_amount' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $conversation = Conversation::findOrFail($id);
 
-        if ($conversation->buyer_id !== Auth::id() && $conversation->seller_id !== Auth::id()) {
+        if (!$this->isUserInConversation($conversation)) {
             abort(403);
         }
 
+        if (!$request->filled('message') && !$request->filled('offer_amount')) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Pesan tidak boleh kosong.',
+            ], 422);
+        }
+
         DB::beginTransaction();
+
         try {
-            // Tentukan message type: 'offer' jika ada offer_amount, 'text' jika tidak
+            // Tentukan tipe pesan
             $messageType = $request->filled('offer_amount') ? 'offer' : 'text';
-            
+
             $message = Message::create([
                 'conversation_id' => $conversation->id,
-                'sender_id' => Auth::id(),
-                'message' => $request->message,
-                'message_type' => $messageType,
-                'offer_amount' => $request->offer_amount,
-                'offer_status' => $messageType === 'offer' ? 'pending' : null,
+                'sender_id'       => Auth::id(),
+                'message'         => $request->message,
+                'message_type'    => $messageType,
+                'offer_amount'    => $request->offer_amount,
+                'offer_status'    => $messageType === 'offer' ? 'pending' : null,
             ]);
 
-            // Update last_message_at untuk sorting di conversation list
+            // Update last message timestamp
             $conversation->updateLastMessageAt();
 
-            // Broadcast message untuk real-time (jika Redis tersedia)
+            // Broadcast real-time (fail-safe)
             try {
                 if (config('broadcasting.default') !== 'null') {
                     broadcast(new MessageSent($message))->toOthers();
                 }
-            } catch (\Exception $e) {
-                // Broadcasting not available (no Redis)
+            } catch (\Throwable $e) {
             }
 
-            // Kirim notifikasi hanya untuk text message, bukan offer
-            // Offer akan di-handle oleh OfferController
+            // Kirim notifikasi (hanya untuk text)
             if ($messageType === 'text') {
-                $recipientId = $conversation->buyer_id === Auth::id() 
-                    ? $conversation->seller_id 
+                $recipient = $conversation->buyer_id === Auth::id()
+                    ? $conversation->seller_id
                     : $conversation->buyer_id;
+
                 $this->notificationService->notifyNewMessage(
-                    \App\Models\User::find($recipientId),
+                    \App\Models\User::find($recipient),
                     $conversation
                 );
             }
@@ -155,20 +185,25 @@ class ChatController extends Controller
                 'success' => true,
                 'message' => $message->load('sender'),
             ]);
-        } catch (\Exception $e) {
+
+        } catch (\Throwable $e) {
             DB::rollBack();
+
             return response()->json([
                 'success' => false,
-                'error' => 'Gagal mengirim pesan: ' . $e->getMessage(),
+                'error'   => 'Gagal mengirim pesan: ' . $e->getMessage(),
             ], 500);
         }
     }
 
+    /**
+     * MARK AS READ
+     */
     public function markAsRead(string $id)
     {
         $conversation = Conversation::findOrFail($id);
 
-        if ($conversation->buyer_id !== Auth::id() && $conversation->seller_id !== Auth::id()) {
+        if (!$this->isUserInConversation($conversation)) {
             abort(403);
         }
 
@@ -180,6 +215,9 @@ class ChatController extends Controller
         return response()->json(['success' => true]);
     }
 
+    /**
+     * GET BUYERS FOR A PRODUCT (SELLER VIEW)
+     */
     public function getBuyersForProduct(string $productId)
     {
         $product = Product::findOrFail($productId);
@@ -190,23 +228,35 @@ class ChatController extends Controller
 
         $conversations = Conversation::where('product_id', $product->id)
             ->with(['buyer', 'messages' => function ($query) {
-                $query->where('message_type', 'offer')
-                    ->orderBy('created_at', 'desc');
+                $query->where('message_type', 'offer')->latest();
             }])
             ->get();
 
-        $buyers = $conversations->map(function ($conversation) {
-            $latestOffer = $conversation->messages->first();
+        $buyers = $conversations->map(function ($c) {
+            $latestOffer = $c->messages->first();
+
             return [
-                'id' => $conversation->buyer_id,
-                'name' => $conversation->buyer->name,
-                'avatar' => $conversation->buyer->avatar,
-                'conversation_id' => $conversation->id,
-                'has_offers' => $conversation->messages->where('message_type', 'offer')->count() > 0,
-                'latest_offer_amount' => $latestOffer ? $latestOffer->offer_amount : null,
+                'id'                 => $c->buyer_id,
+                'name'               => $c->buyer->name,
+                'avatar'             => $c->buyer->avatar,
+                'conversation_id'    => $c->id,
+                'has_offers'         => $c->messages->count() > 0,
+                'latest_offer_amount'=> $latestOffer->offer_amount ?? null,
             ];
         })->unique('id')->values();
 
-        return response()->json(['success' => true, 'data' => $buyers]);
+        return response()->json([
+            'success' => true,
+            'data'    => $buyers,
+        ]);
+    }
+
+    /**
+     * Check jika user termasuk dalam percakapan
+     */
+    private function isUserInConversation(Conversation $conversation): bool
+    {
+        return ($conversation->buyer_id === Auth::id() ||
+                $conversation->seller_id === Auth::id());
     }
 }
